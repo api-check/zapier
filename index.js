@@ -32,7 +32,7 @@ const addAuthHeaders = (request, z, bundle) => {
   return request;
 };
 
-const version = '1.0.5';
+const version = '1.0.7';
 
 const COUNTRIES_ALL = {
   'Netherlands': 'nl', 'Belgium': 'be', 'Luxembourg': 'lu', 'Germany': 'de', 'France': 'fr',
@@ -42,6 +42,14 @@ const COUNTRIES_ALL = {
 };
 
 const COUNTRIES_LOOKUP = { 'Netherlands': 'nl', 'Luxembourg': 'lu' };
+
+// Helper to extract data from API response
+const extractData = (response) => {
+  if (response.json && response.json.data) {
+    return response.json.data;
+  }
+  return response.json;
+};
 
 module.exports = {
   version: version,
@@ -79,18 +87,24 @@ module.exports = {
       operation: {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_LOOKUP, default: 'nl' },
-          { key: 'postalcode', label: 'Postal Code', type: 'string', required: true, helpText: 'e.g., 1012LM' },
+          { key: 'postalcode', label: 'Postal Code', type: 'string', required: true, helpText: 'e.g., 2513AA' },
           { key: 'number', label: 'House Number', type: 'string', required: true, helpText: 'e.g., 1' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
           const response = await z.request(`https://api.apicheck.nl/lookup/v1/postalcode/${country}?postalcode=${bundle.inputData.postalcode}&number=${bundle.inputData.number}`);
-          if (response.json && response.json.data) {
-            return [response.json.data];
-          }
-          return [response.json];
+          return extractData(response);
         },
-        sample: { street: 'Damrak', number: '1', postalcode: '1012LM', city: 'Amsterdam', country: { name: 'Nederland', code: 'nl' } }
+        sample: {
+          street: 'Binnenhof',
+          number: '1',
+          postalcode: '2513AA',
+          city: "'s-Gravenhage",
+          municipality: "'s-Gravenhage",
+          province: 'Zuid-Holland',
+          country: { name: 'Nederland', code: 'NL' },
+          coordinates: { latitude: 52.0791379, longitude: 4.3121533 }
+        }
       }
     },
     
@@ -99,20 +113,23 @@ module.exports = {
       noun: 'Number Addition',
       display: {
         label: 'Get Number Additions',
-        description: 'Get available number additions for a postal code and house number'
+        description: 'Get available number additions for a postal code and house number (e.g., A, B, 1-3)'
       },
       operation: {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_LOOKUP, default: 'nl' },
-          { key: 'postalcode', label: 'Postal Code', type: 'string', required: true, helpText: 'e.g., 1012LM' },
+          { key: 'postalcode', label: 'Postal Code', type: 'string', required: true, helpText: 'e.g., 2513AA' },
           { key: 'number', label: 'House Number', type: 'string', required: true, helpText: 'e.g., 1' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
           const response = await z.request(`https://api.apicheck.nl/lookup/v1/address/${country}?postalcode=${bundle.inputData.postalcode}&number=${bundle.inputData.number}`);
-          return [response.json];
+          return extractData(response);
         },
-        sample: { number: '1', numberAdditions: ['A', 'B', '1-3'] }
+        sample: {
+          number: '1',
+          numberAdditions: ['A', 'B', '1-3']
+        }
       }
     },
     
@@ -129,9 +146,14 @@ module.exports = {
         ],
         perform: async (z, bundle) => {
           const response = await z.request(`https://api.apicheck.nl/verify/v1/email/?email=${encodeURIComponent(bundle.inputData.email)}`);
-          return [response.json.data || response.json];
+          return extractData(response);
         },
-        sample: { email: 'test@example.com', status: 'valid', disposable_email: false, greylisted: false }
+        sample: {
+          email: 'test@example.com',
+          status: 'valid',
+          disposable_email: false,
+          greylisted: false
+        }
       }
     },
     
@@ -148,9 +170,14 @@ module.exports = {
         ],
         perform: async (z, bundle) => {
           const response = await z.request(`https://api.apicheck.nl/verify/v1/phone/?number=${encodeURIComponent(bundle.inputData.number)}`);
-          return [response.json.data || response.json];
+          return extractData(response);
         },
-        sample: { number: '+31612345678', valid: true, country_code: 'NL' }
+        sample: {
+          number: '+31612345678',
+          valid: true,
+          country_code: 'NL',
+          details: { number_type: 'Mobile' }
+        }
       }
     }
   },
@@ -171,23 +198,25 @@ module.exports = {
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
-          const limit = bundle.inputData.limit || '10';
-          const response = await z.request(`https://api.apicheck.nl/search/v1/global/${country}?query=${encodeURIComponent(bundle.inputData.query)}&limit=${limit}`);
+          const params = `query=${encodeURIComponent(bundle.inputData.query)}${bundle.inputData.limit ? '&limit=' + bundle.inputData.limit : ''}`;
+          const response = await z.request(`https://api.apicheck.nl/search/v1/global/${country}?${params}`);
           
-          const data = response.json.data || response.json;
+          const data = extractData(response);
           const results = [];
           
-          // Flatten all results from different types
-          if (data.Results) {
-            if (data.Results.Streets) results.push(...data.Results.Streets.map(s => ({...s, type: 'street'})));
-            if (data.Results.Cities) results.push(...data.Results.Cities.map(c => ({...c, type: 'city'})));
-            if (data.Results.Residences) results.push(...data.Results.Residences.map(r => ({...r, type: 'residence'})));
+          if (data && data.Results) {
+            if (data.Streets) results.push(...data.Streets.map(s => ({...s, type: 'street'})));
+            if (data.Cities) results.push(...data.Cities.map(c => ({...c, type: 'city'})));
+            if (data.Postalcodes) results.push(...data.Postalcodes.map(p => ({...p, type: 'postalcode'})));
           }
-          if (data.results) results.push(...data.results);
           
-          return results;
+          return results.slice(0, parseInt(bundle.inputData.limit || '10'));
         },
-        sample: { name: 'Amsterdam', type: 'city', city_id: 2465 }
+        sample: {
+          name: 'Amsterdam',
+          type: 'city',
+          city_id: 2465
+        }
       }
     }
   }

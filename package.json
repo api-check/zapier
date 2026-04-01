@@ -1,6 +1,6 @@
 {
   "name": "apicheck-zapier",
-  "version": "1.0.2",
+  "version": "1.0.6",
   "description": "ApiCheck integration for Zapier - address validation, search, and verification",
   "main": "index.js",
   "scripts": {
