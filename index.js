@@ -207,7 +207,7 @@ module.exports = {
           { key: 'postalcode_id', label: 'Postal Code ID', type: 'integer', required: false, helpText: 'Filter by postal code' },
           { key: 'locality_id', label: 'Locality ID', type: 'integer', required: false, helpText: 'Filter by locality (Belgium)' },
           { key: 'municipality_id', label: 'Municipality ID', type: 'integer', required: false, helpText: 'Filter by municipality (Belgium)' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
@@ -251,7 +251,7 @@ module.exports = {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
           { key: 'name', label: 'City Name', type: 'string', required: true, helpText: 'e.g., Amsterdam' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
@@ -276,7 +276,7 @@ module.exports = {
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
           { key: 'name', label: 'Street Name', type: 'string', required: true, helpText: 'e.g., Damrak' },
           { key: 'city_id', label: 'City ID', type: 'integer', required: false, helpText: 'Filter by city' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
@@ -302,7 +302,7 @@ module.exports = {
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
           { key: 'name', label: 'Postal Code', type: 'string', required: true, helpText: 'e.g., 1012' },
           { key: 'city_id', label: 'City ID', type: 'integer', required: false, helpText: 'Filter by city' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
@@ -327,7 +327,7 @@ module.exports = {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'be' },
           { key: 'name', label: 'Locality Name', type: 'string', required: true, helpText: 'e.g., Antwerpen' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
@@ -351,7 +351,7 @@ module.exports = {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'be' },
           { key: 'name', label: 'Municipality Name', type: 'string', required: true, helpText: 'e.g., Antwerpen' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
@@ -381,7 +381,7 @@ module.exports = {
           { key: 'municipality_id', label: 'Municipality ID', type: 'integer', required: false, helpText: 'From Search Municipality (Belgium)' },
           { key: 'number', label: 'House Number', type: 'string', required: false, helpText: 'e.g., 1' },
           { key: 'numberAddition', label: 'Number Addition', type: 'string', required: false, helpText: 'e.g., A' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
