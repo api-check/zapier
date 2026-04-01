@@ -158,7 +158,7 @@ module.exports = {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: { 'Netherlands': 'nl', 'Belgium': 'be', 'Luxembourg': 'lu', 'Germany': 'de', 'France': 'fr' }, default: 'nl' },
           { key: 'query', label: 'Search Query', type: 'string', required: true, helpText: 'Search term like city name, street, or postal code' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'string', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const params = new URLSearchParams({
