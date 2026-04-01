@@ -32,9 +32,11 @@ const addAuthHeaders = (request, z, bundle) => {
   return request;
 };
 
+const version = '1.0.0';
+
 module.exports = {
-  version: require('./package.json').version,
-  platformVersion: require('zapier-platform-core').version,
+  version: version,
+  platformVersion: '15.10.0',
   
   authentication,
   
