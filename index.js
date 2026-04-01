@@ -10,7 +10,7 @@ const authentication = {
       label: 'API Key',
       type: 'password',
       required: true,
-      helpText: 'Your ApiCheck API key from [app.apicheck.nl](https://app.apicheck.nl/authentication/register)'
+      helpText: 'Your ApiCheck API key from [app.apicheck.nl](https://app.apicheck.nl)'
     },
     {
       key: 'referer',
@@ -32,7 +32,7 @@ const addAuthHeaders = (request, z, bundle) => {
   return request;
 };
 
-const version = '1.0.6';
+const version = '1.0.7';
 
 const COUNTRIES_ALL = {
   'Netherlands': 'nl', 'Belgium': 'be', 'Luxembourg': 'lu', 'Germany': 'de', 'France': 'fr',
@@ -43,7 +43,6 @@ const COUNTRIES_ALL = {
 
 const COUNTRIES_LOOKUP = { 'Netherlands': 'nl', 'Luxembourg': 'lu' };
 
-// Helper to extract data from API response
 const extractData = (response) => {
   if (response.json && response.json.data) {
     return response.json.data;
@@ -88,11 +87,19 @@ module.exports = {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_LOOKUP, default: 'nl' },
           { key: 'postalcode', label: 'Postal Code', type: 'string', required: true, helpText: 'e.g., 2513AA' },
-          { key: 'number', label: 'House Number', type: 'string', required: true, helpText: 'e.g., 1' }
+          { key: 'number', label: 'House Number', type: 'string', required: true, helpText: 'e.g., 1' },
+          { key: 'numberAddition', label: 'Number Addition', type: 'string', required: false, helpText: 'e.g., A, B, 1-3' }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
-          const response = await z.request(`https://api.apicheck.nl/lookup/v1/postalcode/${country}?postalcode=${bundle.inputData.postalcode}&number=${bundle.inputData.number}`);
+          const params = new URLSearchParams({
+            postalcode: bundle.inputData.postalcode,
+            number: bundle.inputData.number
+          });
+          if (bundle.inputData.numberAddition) {
+            params.append('numberAddition', bundle.inputData.numberAddition);
+          }
+          const response = await z.request(`https://api.apicheck.nl/lookup/v1/postalcode/${country}?${params.toString()}`);
           return extractData(response);
         },
         sample: {
@@ -100,10 +107,7 @@ module.exports = {
           number: '1',
           postalcode: '2513AA',
           city: "'s-Gravenhage",
-          municipality: "'s-Gravenhage",
-          province: 'Zuid-Holland',
-          country: { name: 'Nederland', code: 'NL' },
-          coordinates: { latitude: 52.0791379, longitude: 4.3121533 }
+          country: { name: 'Nederland', code: 'NL' }
         }
       }
     },
@@ -113,7 +117,7 @@ module.exports = {
       noun: 'Number Addition',
       display: {
         label: 'Get Number Additions',
-        description: 'Get available number additions for a postal code and house number (e.g., A, B, 1-3)'
+        description: 'Get available number additions for a postal code and house number'
       },
       operation: {
         inputFields: [
@@ -123,7 +127,12 @@ module.exports = {
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
-          const response = await z.request(`https://api.apicheck.nl/lookup/v1/address/${country}?postalcode=${bundle.inputData.postalcode}&number=${bundle.inputData.number}`);
+          const params = new URLSearchParams({
+            postalcode: bundle.inputData.postalcode,
+            number: bundle.inputData.number,
+            fields: '["numberAdditions"]'
+          });
+          const response = await z.request(`https://api.apicheck.nl/lookup/v1/address/${country}?${params.toString()}`);
           return extractData(response);
         },
         sample: {
@@ -175,8 +184,7 @@ module.exports = {
         sample: {
           number: '+31612345678',
           valid: true,
-          country_code: 'NL',
-          details: { number_type: 'Mobile' }
+          country_code: 'NL'
         }
       }
     }
@@ -194,28 +202,207 @@ module.exports = {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
           { key: 'query', label: 'Search Query', type: 'string', required: true, helpText: 'Search term like city name, street, or postal code' },
-          { key: 'limit', label: 'Limit', type: 'string', required: false, default: '10' }
+          { key: 'city_id', label: 'City ID', type: 'integer', required: false, helpText: 'Filter by city' },
+          { key: 'street_id', label: 'Street ID', type: 'integer', required: false, helpText: 'Filter by street' },
+          { key: 'postalcode_id', label: 'Postal Code ID', type: 'integer', required: false, helpText: 'Filter by postal code' },
+          { key: 'locality_id', label: 'Locality ID', type: 'integer', required: false, helpText: 'Filter by locality (Belgium)' },
+          { key: 'municipality_id', label: 'Municipality ID', type: 'integer', required: false, helpText: 'Filter by municipality (Belgium)' },
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
         ],
         perform: async (z, bundle) => {
           const country = bundle.inputData.country.toLowerCase();
-          const params = `query=${encodeURIComponent(bundle.inputData.query)}${bundle.inputData.limit ? '&limit=' + bundle.inputData.limit : ''}`;
-          const response = await z.request(`https://api.apicheck.nl/search/v1/global/${country}?${params}`);
+          const params = new URLSearchParams({ query: bundle.inputData.query });
+          if (bundle.inputData.city_id) params.append('city_id', bundle.inputData.city_id);
+          if (bundle.inputData.street_id) params.append('street_id', bundle.inputData.street_id);
+          if (bundle.inputData.postalcode_id) params.append('postalcode_id', bundle.inputData.postalcode_id);
+          if (bundle.inputData.locality_id) params.append('locality_id', bundle.inputData.locality_id);
+          if (bundle.inputData.municipality_id) params.append('municipality_id', bundle.inputData.municipality_id);
+          if (bundle.inputData.limit) params.append('limit', bundle.inputData.limit);
+          
+          const response = await z.request(`https://api.apicheck.nl/search/v1/global/${country}?${params.toString()}`);
           
           const data = extractData(response);
           const results = [];
           
           if (data && data.Results) {
-            if (data.Streets) results.push(...data.Streets.map(s => ({...s, type: 'street'})));
-            if (data.Cities) results.push(...data.Cities.map(c => ({...c, type: 'city'})));
-            if (data.Postalcodes) results.push(...data.Postalcodes.map(p => ({...p, type: 'postalcode'})));
+            if (data.Results.Streets) results.push(...data.Results.Streets.map(s => ({...s, type: 'street'})));
+            if (data.Results.Cities) results.push(...data.Results.Cities.map(c => ({...c, type: 'city'})));
+            if (data.Results.Postalcodes) results.push(...data.Results.Postalcodes.map(p => ({...p, type: 'postalcode'})));
           }
           
-          return results.slice(0, parseInt(bundle.inputData.limit || '10'));
+          return results.slice(0, bundle.inputData.limit || 10);
         },
         sample: {
           name: 'Amsterdam',
           type: 'city',
           city_id: 2465
+        }
+      }
+    },
+    
+    search_city: {
+      key: 'search_city',
+      noun: 'City',
+      display: {
+        label: 'Search City',
+        description: 'Search for cities by name across 18 European countries'
+      },
+      operation: {
+        inputFields: [
+          { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
+          { key: 'name', label: 'City Name', type: 'string', required: true, helpText: 'e.g., Amsterdam' },
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+        ],
+        perform: async (z, bundle) => {
+          const country = bundle.inputData.country.toLowerCase();
+          const params = new URLSearchParams({ name: bundle.inputData.name });
+          if (bundle.inputData.limit) params.append('limit', bundle.inputData.limit);
+          const response = await z.request(`https://api.apicheck.nl/search/v1/city/${country}?${params.toString()}`);
+          return extractData(response);
+        },
+        sample: { id: 2465, name: 'Amsterdam' }
+      }
+    },
+    
+    search_street: {
+      key: 'search_street',
+      noun: 'Street',
+      display: {
+        label: 'Search Street',
+        description: 'Search for streets by name across 18 European countries'
+      },
+      operation: {
+        inputFields: [
+          { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
+          { key: 'name', label: 'Street Name', type: 'string', required: true, helpText: 'e.g., Damrak' },
+          { key: 'city_id', label: 'City ID', type: 'integer', required: false, helpText: 'Filter by city' },
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+        ],
+        perform: async (z, bundle) => {
+          const country = bundle.inputData.country.toLowerCase();
+          const params = new URLSearchParams({ name: bundle.inputData.name });
+          if (bundle.inputData.city_id) params.append('city_id', bundle.inputData.city_id);
+          if (bundle.inputData.limit) params.append('limit', bundle.inputData.limit);
+          const response = await z.request(`https://api.apicheck.nl/search/v1/street/${country}?${params.toString()}`);
+          return extractData(response);
+        },
+        sample: { id: 12345, name: 'Damrak', city: 'Amsterdam' }
+      }
+    },
+    
+    search_postalcode: {
+      key: 'search_postalcode',
+      noun: 'Postal Code',
+      display: {
+        label: 'Search Postal Code',
+        description: 'Search for postal codes across 18 European countries'
+      },
+      operation: {
+        inputFields: [
+          { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
+          { key: 'name', label: 'Postal Code', type: 'string', required: true, helpText: 'e.g., 1012' },
+          { key: 'city_id', label: 'City ID', type: 'integer', required: false, helpText: 'Filter by city' },
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+        ],
+        perform: async (z, bundle) => {
+          const country = bundle.inputData.country.toLowerCase();
+          const params = new URLSearchParams({ name: bundle.inputData.name });
+          if (bundle.inputData.city_id) params.append('city_id', bundle.inputData.city_id);
+          if (bundle.inputData.limit) params.append('limit', bundle.inputData.limit);
+          const response = await z.request(`https://api.apicheck.nl/search/v1/postalcode/${country}?${params.toString()}`);
+          return extractData(response);
+        },
+        sample: { id: 54321, postalcode: '1012LM', city: 'Amsterdam' }
+      }
+    },
+    
+    search_locality: {
+      key: 'search_locality',
+      noun: 'Locality',
+      display: {
+        label: 'Search Locality',
+        description: 'Search for localities (deelgemeenten) by name. Primarily relevant for Belgium.'
+      },
+      operation: {
+        inputFields: [
+          { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'be' },
+          { key: 'name', label: 'Locality Name', type: 'string', required: true, helpText: 'e.g., Antwerpen' },
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+        ],
+        perform: async (z, bundle) => {
+          const country = bundle.inputData.country.toLowerCase();
+          const params = new URLSearchParams({ name: bundle.inputData.name });
+          if (bundle.inputData.limit) params.append('limit', bundle.inputData.limit);
+          const response = await z.request(`https://api.apicheck.nl/search/v1/locality/${country}?${params.toString()}`);
+          return extractData(response);
+        },
+        sample: { id: 111, name: 'Antwerpen', municipality: 'Antwerpen' }
+      }
+    },
+    
+    search_municipality: {
+      key: 'search_municipality',
+      noun: 'Municipality',
+      display: {
+        label: 'Search Municipality',
+        description: 'Search for municipalities (gemeenten) by name. Primarily relevant for Belgium.'
+      },
+      operation: {
+        inputFields: [
+          { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'be' },
+          { key: 'name', label: 'Municipality Name', type: 'string', required: true, helpText: 'e.g., Antwerpen' },
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+        ],
+        perform: async (z, bundle) => {
+          const country = bundle.inputData.country.toLowerCase();
+          const params = new URLSearchParams({ name: bundle.inputData.name });
+          if (bundle.inputData.limit) params.append('limit', bundle.inputData.limit);
+          const response = await z.request(`https://api.apicheck.nl/search/v1/municipality/${country}?${params.toString()}`);
+          return extractData(response);
+        },
+        sample: { id: 222, name: 'Antwerpen' }
+      }
+    },
+    
+    search_address: {
+      key: 'search_address',
+      noun: 'Address',
+      display: {
+        label: 'Search Address',
+        description: 'Resolve a full address using IDs from other search results'
+      },
+      operation: {
+        inputFields: [
+          { key: 'country', label: 'Country', type: 'string', required: true, choices: COUNTRIES_ALL, default: 'nl' },
+          { key: 'street_id', label: 'Street ID', type: 'integer', required: false, helpText: 'From Search Street' },
+          { key: 'city_id', label: 'City ID', type: 'integer', required: false, helpText: 'From Search City' },
+          { key: 'postalcode_id', label: 'Postal Code ID', type: 'integer', required: false, helpText: 'From Search Postal Code' },
+          { key: 'locality_id', label: 'Locality ID', type: 'integer', required: false, helpText: 'From Search Locality (Belgium)' },
+          { key: 'municipality_id', label: 'Municipality ID', type: 'integer', required: false, helpText: 'From Search Municipality (Belgium)' },
+          { key: 'number', label: 'House Number', type: 'string', required: false, helpText: 'e.g., 1' },
+          { key: 'numberAddition', label: 'Number Addition', type: 'string', required: false, helpText: 'e.g., A' },
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+        ],
+        perform: async (z, bundle) => {
+          const country = bundle.inputData.country.toLowerCase();
+          const params = new URLSearchParams();
+          if (bundle.inputData.street_id) params.append('street_id', bundle.inputData.street_id);
+          if (bundle.inputData.city_id) params.append('city_id', bundle.inputData.city_id);
+          if (bundle.inputData.postalcode_id) params.append('postalcode_id', bundle.inputData.postalcode_id);
+          if (bundle.inputData.locality_id) params.append('locality_id', bundle.inputData.locality_id);
+          if (bundle.inputData.municipality_id) params.append('municipality_id', bundle.inputData.municipality_id);
+          if (bundle.inputData.number) params.append('number', bundle.inputData.number);
+          if (bundle.inputData.numberAddition) params.append('numberAddition', bundle.inputData.numberAddition);
+          if (bundle.inputData.limit) params.append('limit', bundle.inputData.limit);
+          const response = await z.request(`https://api.apicheck.nl/search/v1/address/${country}?${params.toString()}`);
+          return extractData(response);
+        },
+        sample: {
+          street: 'Damrak',
+          number: '1',
+          postalcode: '1012LM',
+          city: 'Amsterdam',
+          country: { name: 'Nederland', code: 'NL' }
         }
       }
     }
