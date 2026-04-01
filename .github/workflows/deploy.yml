@@ -14,6 +14,8 @@ jobs:
           node-version: '22'
       - run: npm install
       - name: Configure Zapier CLI
-        run: echo "{\"deployKey\": \"${{ secrets.ZAPIER_DEPLOY_KEY }}\"}" > ~/.zapierrc
+        run: |
+          echo "{\"deployKey\": \"${{ secrets.ZAPIER_DEPLOY_KEY }}\"}" > /home/runner/.zapierrc
+          cat /home/runner/.zapierrc
       - name: Push to Zapier
         run: npx zapier-platform-cli push
