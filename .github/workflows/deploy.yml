@@ -1,0 +1,21 @@
+name: Deploy to Zapier
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - name: Configure Zapier CLI
+        run: |
+          mkdir -p ~/.config/zapier
+          echo "{\"deployKey\": \"${{ secrets.ZAPIER_DEPLOY_KEY }}\"}" > ~/.config/zapier/.zapierrc
+      - name: Push to Zapier
+        run: npx zapier-platform-cli push
