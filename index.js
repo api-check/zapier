@@ -32,7 +32,7 @@ const addAuthHeaders = (request, z, bundle) => {
   return request;
 };
 
-const version = '1.0.4';
+const version = '1.0.5';
 
 const COUNTRIES_ALL = {
   'Netherlands': 'nl', 'Belgium': 'be', 'Luxembourg': 'lu', 'Germany': 'de', 'France': 'fr',
