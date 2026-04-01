@@ -32,7 +32,7 @@ const addAuthHeaders = (request, z, bundle) => {
   return request;
 };
 
-const version = '1.0.0';
+const version = '1.0.1';
 
 module.exports = {
   version: version,
@@ -158,7 +158,7 @@ module.exports = {
         inputFields: [
           { key: 'country', label: 'Country', type: 'string', required: true, choices: { 'NL': 'nl', 'BE': 'be', 'LU': 'lu', 'DE': 'de', 'FR': 'fr' }, default: 'nl' },
           { key: 'query', label: 'Search Query', type: 'string', required: true, helpText: 'Search term like city name, street, or postal code' },
-          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: 10 }
+          { key: 'limit', label: 'Limit', type: 'integer', required: false, default: '10' }
         ],
         perform: async (z, bundle) => {
           const params = new URLSearchParams({
