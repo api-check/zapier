@@ -1,0 +1,27 @@
+{
+  "name": "apicheck-zapier",
+  "version": "1.0.0",
+  "description": "ApiCheck integration for Zapier - address validation, search, and verification",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --testEnvironment node",
+    "validate": "zapier validate",
+    "push": "zapier push",
+    "promote": "zapier promote"
+  },
+  "dependencies": {
+    "zapier-platform-core": "15.10.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "zapier": {
+    "concurrency": 10,
+    "invocation": {
+      "poll_interval": 300
+    }
+  }
+}
